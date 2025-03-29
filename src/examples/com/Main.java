@@ -1,17 +1,17 @@
 package examples.com;
 
 // Import required Java I/O and networking classes
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import org.json.JSONObject;
+import java.io.BufferedReader;       // Reads text from a character-input stream
+import java.io.InputStreamReader;    // Bridge from byte streams to character streams
+import java.net.HttpURLConnection;   // For making HTTP connections
+import java.net.URL;                 // Represents a Uniform Resource Locator
+import org.json.JSONObject;          // For parsing and working with JSON data
 
 public class Main {
+    // Main method - entry point of the application
     public static void main(String[] args) throws Exception {
-            // 1. Make HTTP GET request to a JSON API
-        // Create a URL object for the target API endpoint
+        // 1. Make HTTP GET request to a URL
+        // Create a URL object for the target endpoint
         URL url = new URL("https://hello-welcome-to-my-site.netlify.app/about/");
 
         // Open a connection to the URL and cast it to HttpURLConnection
@@ -20,42 +20,66 @@ public class Main {
         // Set the HTTP request method to GET
         conn.setRequestMethod("GET");
 
-            // 2. Read the response
-        // Get the HTTP response code - status code -
-        // from the server (200 = OK, 404 = Not Found, etc.)
+        // 2. Get response metadata
+        // Retrieve the HTTP status code (200 = OK, 404 = Not Found, etc.)
         int responseCode = conn.getResponseCode();
+        // Get the content type header to verify response format
+        String contentType = conn.getContentType();
         System.out.println("Status code: " + responseCode);
+        System.out.println("Content type: " + contentType);
 
-        // Create a BufferedReader to read the response from the server
-        // InputStreamReader converts the byte stream
-            // from conn.getInputStream() to characters
-        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        // Process only successful responses (status code 200-299)
+        if (responseCode >= 200 && responseCode < 300) {
+            // 3. Verify content type before JSON parsing
+            if (contentType != null && contentType.contains("application/json")) {
+                // Create a BufferedReader to read the response from the server
+                // InputStreamReader converts the byte stream to characters
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-        // Variables to store each line of response and build the complete response
-        String inputLine;
-        StringBuilder response = new StringBuilder();
+                // Variables to store each line of response and build complete response
+                String inputLine;
+                StringBuilder response = new StringBuilder();
 
-        // Read the response line by line and append to the StringBuilder
-        while((inputLine = in.readLine()) != null) {
-            response.append(inputLine); //add each line to the response
-        }
+                // Read the response line by line and append to the StringBuilder
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);  // Add each line to the response
+                }
 
-        //Close the BufferedReader to release resources
-        in.close();
+                // Close the BufferedReader to release resources
+                in.close();
 
-        //Print the complete response as a String IF NEEDED
-        //System.out.println(response.toString());
+                // 4. Attempt to parse the JSON response
+                try {
+                    // Convert the response string to a JSONObject
+                    JSONObject obj = new JSONObject(response.toString());
+                    String key = "answer"; // The JSON key we want to extract
 
-            // 3. Parse the JSON response
-        JSONObject obj = new JSONObject(response.toString());
-        String key = "answer"; // The JSON key you want to extract
+                    // Safely check if the key exists before accessing it
+                    if (obj.has(key)) {
+                        System.out.println("API Response: " + obj.getString(key));
+                    } else {
+                        System.out.println("Key '" + key + "' not found in JSON");
+                        System.out.println("Full response: " + response.toString());
+                    }
+                } catch (Exception e) {
+                    // Handle JSON parsing errors
+                    System.out.println("JSON parsing error: " + e.getMessage());
+                    System.out.println("Response might not be valid JSON");
+                }
+            } else {
+                // Handle non-JSON responses
+                System.out.println("Unexpected content type. Expected JSON but got: " + contentType);
 
-        // 4. Safely check and get the value
-        if (obj.has(key)) {
-            System.out.println("API Response: " + obj.getString(key));
+                // Read response anyway for debugging purposes
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                // Concatenate all lines of the response
+                String debugResponse = in.lines().reduce("", String::concat);
+                in.close();
+                System.out.println("Response content: " + debugResponse);
+            }
         } else {
-            System.out.println("Key '" + key + "' not found in JSON");
+            // Handle failed requests
+            System.out.println("Request failed with status: " + responseCode);
         }
-
     }
 }
