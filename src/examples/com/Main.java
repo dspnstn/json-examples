@@ -73,7 +73,8 @@ public class Main {
                 // Read response anyway for debugging purposes
                 BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 // Concatenate all lines of the response
-                String debugResponse = in.lines().reduce("", String::concat);
+                StringBuilder debugResponse = new StringBuilder();
+                debugResponse.append(in.readLine());
                 in.close();
                 System.out.println("Response content: " + debugResponse);
             }
