@@ -12,7 +12,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // 1. Make HTTP GET request to a URL
         // Create a URL object for the target endpoint
-        URL url = new URL("https://hello-welcome-to-my-site.netlify.app/about/");
+        URL url = new URL("https://v2.jokeapi.dev/joke/Programming?type=single");
 
         // Open a connection to the URL and cast it to HttpURLConnection
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
